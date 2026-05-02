@@ -1,0 +1,35 @@
+Institution_Name,Qualification_Title,NQF_Level,Field_of_Study,Duration_Years,Skills_Needed,Bursary_Availability
+University of Zululand,BSc in Computer Science,7,STEM,3,"Logic, Programming, Math","NSFAS, ISFAP, CSIR"
+University of Zululand,BEd in Foundation Phase,7,Education,4,"Patience, Literacy, Child Psychology","Funza Lushaka, NSFAS"
+University of KwaZulu-Natal,MBChB (Medicine),8,Health,6,"Diagnosis, Science, Empathy","NSFAS, Dept of Health"
+University of KwaZulu-Natal,BSc in Agricultural Engineering,8,Engineering,4,"Physics, Math, Agri-science","NSFAS, Sugar Industry"
+Durban University of Technology,Diploma in Journalism,6,Media,3,"Writing, Ethics, Research","NSFAS, Media SETA"
+Mangosuthu University of Technology,Diploma in Nature Conservation,6,Science,3,"Biology, Field Work, Ecology","NSFAS, SANParks"
+Umfolozi TVET College,National Diploma: Electrical Engineering,6,Engineering,3,"Math, Circuitry, Hands-on","NSFAS, Merseta"
+Coastal KZN TVET College,NC(V): Civil Engineering,4,Construction,3,"Physical Work, Calculation","NSFAS, CETA"
+Majuba TVET College,NC(V): Hospitality,4,Services,3,"Cooking, Service, Hygiene","NSFAS, Cathsseta"
+University of the Witwatersrand,BSc in Mining Engineering,8,Engineering,4,"Geology, Physics, Math","NSFAS, Minerals Council"
+University of Johannesburg,BCom in Accounting,7,Business,3,"Numeracy, Ethics, Analysis","NSFAS, SAICA, ISFAP"
+University of Pretoria,Bachelor of Veterinary Science (BVSc),8,Health,6,"Animal Biology, Science","NSFAS, Dept of Agriculture"
+Tshwane University of Technology,Diploma in Software Development,6,STEM,3,"Coding, UX Design, Logic","NSFAS, MICT SETA"
+UNISA,Bachelor of Laws (LLB),8,Law,4,"Research, Logic, Writing",NSFAS
+South West Gauteng TVET College,NC(V): Marketing,4,Business,3,"Communication, Sales","NSFAS, SETA"
+University of Cape Town,BSc in Astrophysics,7,STEM,3,"Advanced Physics, Calculus","NSFAS, SARAO, NRF"
+Stellenbosch University,BSc in Food Science,7,Science,3,"Chemistry, Biology, Safety","NSFAS, FoodBev SETA"
+University of the Western Cape,B.Pharmacy,8,Health,4,"Chemistry, Patient Care","NSFAS, Dept of Health"
+Cape Peninsula University of Technology,Diploma in Fashion Design,6,Arts,3,"Creativity, Sewing, Design","NSFAS, Fiber Processing SETA"
+False Bay TVET College,National Diploma: Boat Building,6,Technical,3,"Carpentry, Engineering","NSFAS, Industry Partners"
+Rhodes University,Bachelor of Pharmacy,8,Health,4,"Clinical, Science, Ethics","NSFAS, Aspen Pharmacare"
+University of Fort Hare,BSc in Agriculture,7,Science,3,"Biology, Management","NSFAS, Dept of Agriculture"
+Nelson Mandela University,BEng in Mechatronics,8,Engineering,4,"Robotics, Math, Electronics","NSFAS, VWSA, Isuzu"
+Walter Sisulu University,Diploma in Fine Art,6,Arts,3,"Creativity, Studio Work",NSFAS
+University of the Free State,B.Agric in Animal Science,7,Agriculture,3,"Biology, Farming","NSFAS, AgriSETA"
+Central University of Technology,Diploma in Information Technology,6,STEM,3,"Networking, Support",NSFAS
+Motheo TVET College,NC(V): Tourism,4,Services,3,"People Skills, Geography",NSFAS
+University of Venda,BSc in Environmental Sciences,7,Science,3,"Geography, Biology",NSFAS
+University of Limpopo,BSc in Medical Sciences,7,Health,3,"Pathology, Science",NSFAS
+University of Mpumalanga,Bachelor of Development Studies,7,Social Science,3,"Sociology, Planning",NSFAS
+Vhembe TVET College,NC(V): Primary Agriculture,4,Agriculture,3,"Farming, Science","NSFAS, AgriSETA"
+North-West University,BEng in Chemical Engineering,8,Engineering,4,"Chemistry, Calculus","NSFAS, Sasol"
+Sol Plaatje University,BSc in Data Science,7,STEM,3,"Math, Analysis, Coding","NSFAS, NRF"
+Orbit TVET College,NC(V): Automotive Repair,4,Technical,3,"Mechanics, Tools","NSFAS, Merseta"
