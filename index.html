@@ -48,6 +48,13 @@
         }
         .success { background: #e6f4ea; border: 1px solid #34a853; }
         .error { background: #fce8e6; border: 1px solid #ea4335; }
+        .bursary-box {
+            background: #fff8e1;
+            border: 1px solid #f9a825;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -72,6 +79,9 @@
 
         <label>Number of Skills</label>
         <input type="number" id="skills_count" value="3" min="1" max="10">
+
+        <label>Average Marks (%)</label>
+        <input type="number" id="marks" value="60" min="0" max="100" placeholder="e.g. 75">
 
         <label>Field of Study</label>
         <select id="field">
@@ -109,6 +119,7 @@
             }
 
             const name = document.getElementById('name').value || 'Anonymous';
+            const marks = parseInt(document.getElementById('marks').value);
 
             const data = {
                 name: name,
@@ -116,7 +127,8 @@
                 duration: parseInt(document.getElementById('duration').value),
                 skills_count: parseInt(document.getElementById('skills_count').value),
                 field: document.getElementById('field').value,
-                institution: document.getElementById('institution').value
+                institution: document.getElementById('institution').value,
+                marks: marks
             };
 
             const resultDiv = document.getElementById('result');
@@ -132,13 +144,37 @@
                 });
 
                 const result = await response.json();
+
+                // Bursary advice based on marks
+                let bursaryAdvice = '';
+                let bursaryList = '';
+                if (marks >= 75) {
+                    bursaryAdvice = '🌟 Excellent! You qualify for multiple bursaries:';
+                    bursaryList = 'NSFAS, ISFAP, CSIR, Funza Lushaka, Anglo American';
+                } else if (marks >= 60) {
+                    bursaryAdvice = '✅ Good marks! You qualify for:';
+                    bursaryList = 'NSFAS, ISFAP';
+                } else if (marks >= 50) {
+                    bursaryAdvice = '📋 You qualify for:';
+                    bursaryList = 'NSFAS';
+                } else {
+                    bursaryAdvice = '⚠️ Focus on improving your marks to qualify for bursaries.';
+                    bursaryList = '';
+                }
+
                 resultDiv.className = 'success';
                 resultDiv.innerHTML = `
                     <h3>✅ Prediction Result</h3>
                     <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Average Marks:</strong> ${marks}%</p>
                     <p><strong>Bursary Availability:</strong> ${result.prediction}</p>
                     <p><strong>Confidence:</strong> ${result.confidence}</p>
-                    <p>${result.message}</p>
+                    <div class="bursary-box">
+                        <strong>💰 Bursary Advice:</strong><br>
+                        ${bursaryAdvice}<br>
+                        ${bursaryList ? `<strong>${bursaryList}</strong>` : ''}
+                    </div>
+                    <p style="margin-top:10px;">${result.message}</p>
                 `;
             } catch (error) {
                 resultDiv.className = 'error';
