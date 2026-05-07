@@ -96,6 +96,11 @@
             font-weight: bold;
             color: #185FA5;
         }
+        .result-box {
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -186,15 +191,12 @@
         function updateMarksSection() {
             const section = document.getElementById('marks-section');
             const grid = document.getElementById('marks-grid');
-
             if (selectedSubjects.length === 0) {
                 section.style.display = 'none';
                 return;
             }
-
             section.style.display = 'block';
             grid.innerHTML = '';
-
             selectedSubjects.forEach(subject => {
                 grid.innerHTML += `
                     <div class="marks-item">
@@ -205,7 +207,6 @@
                     </div>
                 `;
             });
-
             calculateAverage();
         }
 
@@ -230,15 +231,12 @@
                 alert('Please agree to the consent before continuing.');
                 return;
             }
-
             if (selectedSubjects.length === 0) {
                 alert('Please select at least one subject.');
                 return;
             }
-
             const name = document.getElementById('name').value || 'Anonymous';
             const marks = calculateAverage();
-
             const data = {
                 name: name,
                 nqf_level: parseInt(document.getElementById('nqf_level').value),
@@ -279,11 +277,14 @@
                     bursaryList = '';
                 }
 
-                // Build subjects and marks summary
                 let subjectsSummary = selectedSubjects.map(subject => {
                     const input = document.getElementById('mark_' + subject.replace(/\s/g,'_'));
                     return `${subject}: ${input ? input.value : 0}%`;
                 }).join(' | ');
+
+                let predictionLabel = result.prediction === 'Rich' ? 'High Bursary Availability' :
+                                      result.prediction === 'Moderate' ? 'Moderate Bursary Availability' :
+                                      'Low Bursary Availability';
 
                 resultDiv.className = 'success';
                 resultDiv.innerHTML = `
@@ -291,20 +292,24 @@
                     <p><strong>Name:</strong> ${name}</p>
                     <p><strong>Subjects:</strong> ${subjectsSummary}</p>
                     <p><strong>Average Marks:</strong> ${marks}%</p>
-                    <p><strong>Bursary Availability:</strong> ${result.prediction === 'Rich' ? 'High Bursary Availability' : result.prediction === 'Moderate' ? 'Moderate Bursary Availability' : 'Low Bursary Availability'}</p>
+                    <p><strong>Bursary Availability:</strong> ${predictionLabel}</p>
                     <p><strong>Confidence:</strong> ${result.confidence}</p>
                     <div class="bursary-box">
                         <strong>Bursary Advice:</strong><br>
                         ${bursaryAdvice}<br>
                         ${bursaryList ? `<strong>${bursaryList}</strong>` : ''}
                     </div>
-                    <div style="background:#e8f0fe;border:1px solid #4285f4;border-radius:5px;padding:10px;margin-top:10px;">
+                    <div class="result-box" style="background:#e8f0fe;border:1px solid #4285f4;">
                         <strong>Recommended Careers:</strong><br>
                         ${result.careers.join(', ')}
                     </div>
-                    <div style="background:#f3e8ff;border:1px solid #9c27b0;border-radius:5px;padding:10px;margin-top:10px;">
+                    <div class="result-box" style="background:#f3e8ff;border:1px solid #9c27b0;">
                         <strong>Recommended Universities:</strong><br>
                         ${result.universities.join(', ')}
+                    </div>
+                    <div class="result-box" style="background:#e6f4ea;border:1px solid #34a853;">
+                        <strong>Skills You Need:</strong><br>
+                        ${result.skills.join(', ')}
                     </div>
                     <p style="margin-top:10px;">${result.message}</p>
                 `;

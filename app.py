@@ -32,6 +32,7 @@ def home():
 @app.route('/home')
 def home_page():
     return send_from_directory('.', 'index.html')
+
 @app.route('/login-page')
 def login_page():
     return send_from_directory('.', 'login.html')
@@ -39,9 +40,11 @@ def login_page():
 @app.route('/register-page')
 def register_page():
     return send_from_directory('.', 'register.html')
+
 @app.route('/dashboard')
 def dashboard():
     return send_from_directory('.', 'dashboard.html')
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -104,15 +107,26 @@ def predict():
         'Education': ['University of Zululand', 'UKZN', 'University of South Africa (UNISA)']
     }
 
+    skills_map = {
+        'STEM': ['Logic', 'Programming', 'Mathematics', 'Coding', 'Advanced Physics', 'Calculus'],
+        'Health': ['Diagnosis', 'Science', 'Empathy', 'Chemistry', 'Patient Care'],
+        'Engineering': ['Physics', 'Mathematics', 'Hands-on work', 'Geology', 'Circuitry'],
+        'Business': ['Numeracy', 'Ethics', 'Analysis', 'Communication', 'Sales'],
+        'Arts': ['Creativity', 'Design', 'Studio Work', 'Sewing'],
+        'Education': ['Patience', 'Literacy', 'Child Psychology', 'Communication']
+    }
+
     careers = career_map.get(field, ['Please consult a career counsellor'])
     universities = university_map.get(field, ['Please consult your institution'])
+    skills = skills_map.get(field, ['Communication', 'Critical Thinking', 'Problem Solving'])
 
     return jsonify({
         'prediction': prediction,
         'confidence': f'{confidence}%',
         'message': f'Bursary availability is predicted to be {prediction}',
         'careers': careers,
-        'universities': universities
+        'universities': universities,
+        'skills': skills
     })
 
 @app.route('/predictions', methods=['GET'])
