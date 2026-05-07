@@ -39,6 +39,9 @@ def login_page():
 @app.route('/register-page')
 def register_page():
     return send_from_directory('.', 'register.html')
+@app.route('/dashboard')
+def dashboard():
+    return send_from_directory('.', 'dashboard.html')
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
