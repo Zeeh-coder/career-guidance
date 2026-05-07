@@ -162,7 +162,6 @@
                     bursaryList = '';
                 }
 
-                resultDiv.className = 'success';
                 resultDiv.innerHTML = `
                     <h3>✅ Prediction Result</h3>
                     <p><strong>Name:</strong> ${name}</p>
@@ -173,6 +172,14 @@
                         <strong>💰 Bursary Advice:</strong><br>
                         ${bursaryAdvice}<br>
                         ${bursaryList ? `<strong>${bursaryList}</strong>` : ''}
+                    </div>
+                    <div style="background:#e8f0fe;border:1px solid #4285f4;border-radius:5px;padding:10px;margin-top:10px;">
+                        <strong>🎯 Recommended Careers:</strong><br>
+                        ${result.careers.join(', ')}
+                    </div>
+                    <div style="background:#f3e8ff;border:1px solid #9c27b0;border-radius:5px;padding:10px;margin-top:10px;">
+                        <strong>🏫 Recommended Universities:</strong><br>
+                        ${result.universities.join(', ')}
                     </div>
                     <p style="margin-top:10px;">${result.message}</p>
                 `;

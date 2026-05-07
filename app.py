@@ -49,10 +49,35 @@ def predict():
     probabilities = model.predict_proba(input_scaled)[0]
     confidence = round(max(probabilities) * 100, 2)
     save_prediction(nqf_level, duration, skills_count, field, institution, prediction, f'{confidence}%')
+    # Career recommendations based on field
+    career_map = {
+        'STEM': ['Data Scientist', 'Software Engineer', 'Mathematician', 'Statistician'],
+        'Health': ['Medical Doctor', 'Nurse', 'Pharmacist', 'Physiotherapist'],
+        'Engineering': ['Civil Engineer', 'Electrical Engineer', 'Mechanical Engineer'],
+        'Business': ['Accountant', 'Business Analyst', 'Economist', 'Financial Manager'],
+        'Arts': ['Graphic Designer', 'Journalist', 'Social Worker', 'Teacher'],
+        'Education': ['Teacher', 'Educational Psychologist', 'Lecturer', 'Curriculum Developer']
+    }
+
+    # University recommendations based on field
+    university_map = {
+        'STEM': ['University of Zululand', 'UKZN', 'Wits University'],
+        'Health': ['UKZN Medical School', 'University of Pretoria', 'Stellenbosch University'],
+        'Engineering': ['Durban University of Technology', 'UKZN', 'Cape Peninsula University of Technology'],
+        'Business': ['University of Zululand', 'UKZN', 'University of Johannesburg'],
+        'Arts': ['University of Zululand', 'UKZN', 'University of Cape Town'],
+        'Education': ['University of Zululand', 'UKZN', 'University of South Africa (UNISA)']
+    }
+
+    careers = career_map.get(field, ['Please consult a career counsellor'])
+    universities = university_map.get(field, ['Please consult your institution'])
+
     return jsonify({
         'prediction': prediction,
         'confidence': f'{confidence}%',
-        'message': f'Bursary availability is predicted to be {prediction}'
+        'message': f'Bursary availability is predicted to be {prediction}',
+        'careers': careers,
+        'universities': universities
     })
 
 @app.route('/predictions', methods=['GET'])
