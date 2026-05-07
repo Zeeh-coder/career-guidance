@@ -1,11 +1,13 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, session
 from flask_cors import CORS
 import joblib
 import numpy as np
-from database import init_db, save_consent, save_prediction, get_all_predictions
+import os
+from database import init_db, save_consent, save_prediction, get_all_predictions, register_user, login_user
 
 app = Flask(__name__)
 CORS(app)
+app.secret_key = os.urandom(24)
 
 init_db()
 
@@ -31,6 +33,31 @@ def home():
 def home_page():
     return send_from_directory('.', 'index.html')
 
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.json
+    name = data.get('name', '')
+    email = data.get('email', '')
+    password = data.get('password', '')
+    if not name or not email or not password:
+        return jsonify({'success': False, 'message': 'All fields are required'})
+    success = register_user(name, email, password)
+    if success:
+        return jsonify({'success': True, 'message': 'Account created successfully!'})
+    else:
+        return jsonify({'success': False, 'message': 'Email already exists. Please login.'})
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    email = data.get('email', '')
+    password = data.get('password', '')
+    user = login_user(email, password)
+    if user:
+        return jsonify({'success': True, 'message': 'Login successful!', 'name': user[1]})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid email or password.'})
+
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json
@@ -49,7 +76,7 @@ def predict():
     probabilities = model.predict_proba(input_scaled)[0]
     confidence = round(max(probabilities) * 100, 2)
     save_prediction(nqf_level, duration, skills_count, field, institution, prediction, f'{confidence}%')
-    # Career recommendations based on field
+
     career_map = {
         'STEM': ['Data Scientist', 'Software Engineer', 'Mathematician', 'Statistician'],
         'Health': ['Medical Doctor', 'Nurse', 'Pharmacist', 'Physiotherapist'],
@@ -59,7 +86,6 @@ def predict():
         'Education': ['Teacher', 'Educational Psychologist', 'Lecturer', 'Curriculum Developer']
     }
 
-    # University recommendations based on field
     university_map = {
         'STEM': ['University of Zululand', 'UKZN', 'Wits University'],
         'Health': ['UKZN Medical School', 'University of Pretoria', 'Stellenbosch University'],
