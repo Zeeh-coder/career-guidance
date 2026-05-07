@@ -32,7 +32,13 @@ def home():
 @app.route('/home')
 def home_page():
     return send_from_directory('.', 'index.html')
+@app.route('/login-page')
+def login_page():
+    return send_from_directory('.', 'login.html')
 
+@app.route('/register-page')
+def register_page():
+    return send_from_directory('.', 'register.html')
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json

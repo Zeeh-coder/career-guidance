@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Guidance System - Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 450px;
+            margin: 80px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #185FA5; text-align: center; }
+        .form-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background: #185FA5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover { background: #0d4a8a; }
+        .link { text-align: center; margin-top: 15px; font-size: 14px; }
+        .link a { color: #185FA5; }
+        #message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            text-align: center;
+        }
+        .success { background: #e6f4ea; border: 1px solid #34a853; }
+        .error { background: #fce8e6; border: 1px solid #ea4335; }
+    </style>
+</head>
+<body>
+    <h1>Career Guidance System</h1>
+    <p style="text-align:center;color:gray;">University of Zululand - Group 6</p>
+
+    <div class="form-card">
+        <h2 style="text-align:center;color:#185FA5;">Login</h2>
+
+        <label>Email</label>
+        <input type="email" id="email" placeholder="e.g. sipho@gmail.com">
+
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter your password">
+
+        <button onclick="login()">Login</button>
+
+        <div id="message"></div>
+
+        <div class="link">
+            Don't have an account? <a href="https://career-guidance-p6j0.onrender.com/register-page">Register here</a>
+        </div>
+    </div>
+
+    <script>
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+
+            const response = await fetch('https://career-guidance-p6j0.onrender.com/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showMessage('Login successful! Redirecting...', 'success');
+                localStorage.setItem('student_name', result.name);
+                setTimeout(() => {
+                    window.location.href = 'https://career-guidance-p6j0.onrender.com/home';
+                }, 1500);
+            } else {
+                showMessage(result.message, 'error');
+            }
+        }
+
+        function showMessage(msg, type) {
+            const el = document.getElementById('message');
+            el.style.display = 'block';
+            el.className = type;
+            el.innerHTML = msg;
+        }
+    </script>
+</body>
+</html>
