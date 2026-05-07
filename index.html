@@ -55,11 +55,52 @@
             padding: 10px;
             margin-top: 10px;
         }
+        .subject-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 4px;
+            border-radius: 99px;
+            background: #e8f0fe;
+            border: 1px solid #4285f4;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .subject-tag.selected {
+            background: #185FA5;
+            color: white;
+            border-color: #185FA5;
+        }
+        .marks-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .marks-item label {
+            font-size: 13px;
+            font-weight: normal;
+            color: #444;
+            margin-top: 0;
+        }
+        .marks-item input {
+            padding: 8px;
+            font-size: 13px;
+        }
+        .average-box {
+            background: #e8f0fe;
+            border: 1px solid #4285f4;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #185FA5;
+        }
     </style>
 </head>
 <body>
-    <h1>🎓 Career Guidance System</h1>
-    <p style="text-align:center;color:gray;">University of Zululand — Group 6</p>
+    <h1>Career Guidance System</h1>
+    <p style="text-align:center;color:gray;">University of Zululand - Group 6</p>
 
     <div class="form-card">
 
@@ -68,20 +109,14 @@
 
         <label>NQF Level</label>
         <select id="nqf_level">
-            <option value="4">NQF 4 — Grade 12</option>
-            <option value="6">NQF 6 — Diploma</option>
-            <option value="7" selected>NQF 7 — Degree</option>
-            <option value="8">NQF 8 — Honours</option>
+            <option value="4">NQF 4 - Grade 12</option>
+            <option value="6">NQF 6 - Diploma</option>
+            <option value="7" selected>NQF 7 - Degree</option>
+            <option value="8">NQF 8 - Honours</option>
         </select>
 
         <label>Duration (Years)</label>
         <input type="number" id="duration" value="3" min="1" max="6">
-
-        <label>Number of Skills</label>
-        <input type="number" id="skills_count" value="3" min="1" max="10">
-
-        <label>Average Marks (%)</label>
-        <input type="number" id="marks" value="60" min="0" max="100" placeholder="e.g. 75">
 
         <label>Field of Study</label>
         <select id="field">
@@ -100,6 +135,29 @@
             <option value="TVET College">TVET College</option>
         </select>
 
+        <label>Select Your Subjects</label>
+        <p style="font-size:13px;color:gray;margin:5px 0;">Click to select all subjects you study</p>
+        <div id="subject-tags">
+            <span class="subject-tag" onclick="toggleSubject(this)">Mathematics</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">Physical Sciences</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">Life Sciences</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">Accounting</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">Economics</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">Geography</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">History</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">English</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">IsiZulu</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">Computer Applications</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">Business Studies</span>
+            <span class="subject-tag" onclick="toggleSubject(this)">Visual Arts</span>
+        </div>
+
+        <div id="marks-section" style="display:none;">
+            <label>Enter Your Marks (%)</label>
+            <div class="marks-grid" id="marks-grid"></div>
+            <div class="average-box" id="average-display">Average: 0%</div>
+        </div>
+
         <label style="margin-top:15px;">
             <input type="checkbox" id="consent" style="width:auto;margin-right:8px;">
             I agree to my information being used for career guidance recommendations.
@@ -111,6 +169,61 @@
     </div>
 
     <script>
+        let selectedSubjects = [];
+
+        function toggleSubject(el) {
+            const subject = el.textContent;
+            if (el.classList.contains('selected')) {
+                el.classList.remove('selected');
+                selectedSubjects = selectedSubjects.filter(s => s !== subject);
+            } else {
+                el.classList.add('selected');
+                selectedSubjects.push(subject);
+            }
+            updateMarksSection();
+        }
+
+        function updateMarksSection() {
+            const section = document.getElementById('marks-section');
+            const grid = document.getElementById('marks-grid');
+
+            if (selectedSubjects.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            grid.innerHTML = '';
+
+            selectedSubjects.forEach(subject => {
+                grid.innerHTML += `
+                    <div class="marks-item">
+                        <label>${subject}</label>
+                        <input type="number" id="mark_${subject.replace(/\s/g,'_')}"
+                            min="0" max="100" placeholder="0-100"
+                            oninput="calculateAverage()">
+                    </div>
+                `;
+            });
+
+            calculateAverage();
+        }
+
+        function calculateAverage() {
+            let total = 0;
+            let count = 0;
+            selectedSubjects.forEach(subject => {
+                const input = document.getElementById('mark_' + subject.replace(/\s/g,'_'));
+                if (input && input.value !== '') {
+                    total += parseInt(input.value);
+                    count++;
+                }
+            });
+            const avg = count > 0 ? Math.round(total / count) : 0;
+            document.getElementById('average-display').textContent = 'Average: ' + avg + '%';
+            return avg;
+        }
+
         async function predict() {
             const consent = document.getElementById('consent').checked;
             if (!consent) {
@@ -118,14 +231,19 @@
                 return;
             }
 
+            if (selectedSubjects.length === 0) {
+                alert('Please select at least one subject.');
+                return;
+            }
+
             const name = document.getElementById('name').value || 'Anonymous';
-            const marks = parseInt(document.getElementById('marks').value);
+            const marks = calculateAverage();
 
             const data = {
                 name: name,
                 nqf_level: parseInt(document.getElementById('nqf_level').value),
                 duration: parseInt(document.getElementById('duration').value),
-                skills_count: parseInt(document.getElementById('skills_count').value),
+                skills_count: selectedSubjects.length,
                 field: document.getElementById('field').value,
                 institution: document.getElementById('institution').value,
                 marks: marks
@@ -145,47 +263,54 @@
 
                 const result = await response.json();
 
-                // Bursary advice based on marks
                 let bursaryAdvice = '';
                 let bursaryList = '';
                 if (marks >= 75) {
-                    bursaryAdvice = '🌟 Excellent! You qualify for multiple bursaries:';
+                    bursaryAdvice = 'Excellent! You qualify for multiple bursaries:';
                     bursaryList = 'NSFAS, ISFAP, CSIR, Funza Lushaka, Anglo American';
                 } else if (marks >= 60) {
-                    bursaryAdvice = '✅ Good marks! You qualify for:';
+                    bursaryAdvice = 'Good marks! You qualify for:';
                     bursaryList = 'NSFAS, ISFAP';
                 } else if (marks >= 50) {
-                    bursaryAdvice = '📋 You qualify for:';
+                    bursaryAdvice = 'You qualify for:';
                     bursaryList = 'NSFAS';
                 } else {
-                    bursaryAdvice = '⚠️ Focus on improving your marks to qualify for bursaries.';
+                    bursaryAdvice = 'Focus on improving your marks to qualify for bursaries.';
                     bursaryList = '';
                 }
-resultDiv.className = 'success';
+
+                // Build subjects and marks summary
+                let subjectsSummary = selectedSubjects.map(subject => {
+                    const input = document.getElementById('mark_' + subject.replace(/\s/g,'_'));
+                    return `${subject}: ${input ? input.value : 0}%`;
+                }).join(' | ');
+
+                resultDiv.className = 'success';
                 resultDiv.innerHTML = `
-                    <h3>✅ Prediction Result</h3>
+                    <h3>Prediction Result</h3>
                     <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Subjects:</strong> ${subjectsSummary}</p>
                     <p><strong>Average Marks:</strong> ${marks}%</p>
                     <p><strong>Bursary Availability:</strong> ${result.prediction}</p>
                     <p><strong>Confidence:</strong> ${result.confidence}</p>
                     <div class="bursary-box">
-                        <strong>💰 Bursary Advice:</strong><br>
+                        <strong>Bursary Advice:</strong><br>
                         ${bursaryAdvice}<br>
                         ${bursaryList ? `<strong>${bursaryList}</strong>` : ''}
                     </div>
                     <div style="background:#e8f0fe;border:1px solid #4285f4;border-radius:5px;padding:10px;margin-top:10px;">
-                        <strong>🎯 Recommended Careers:</strong><br>
+                        <strong>Recommended Careers:</strong><br>
                         ${result.careers.join(', ')}
                     </div>
                     <div style="background:#f3e8ff;border:1px solid #9c27b0;border-radius:5px;padding:10px;margin-top:10px;">
-                        <strong>🏫 Recommended Universities:</strong><br>
+                        <strong>Recommended Universities:</strong><br>
                         ${result.universities.join(', ')}
                     </div>
                     <p style="margin-top:10px;">${result.message}</p>
                 `;
             } catch (error) {
                 resultDiv.className = 'error';
-                resultDiv.innerHTML = '❌ Error connecting to the API. Make sure app.py is running.';
+                resultDiv.innerHTML = 'Error connecting to the API. Make sure app.py is running.';
             }
         }
     </script>
