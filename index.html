@@ -291,7 +291,7 @@
                     <p><strong>Name:</strong> ${name}</p>
                     <p><strong>Subjects:</strong> ${subjectsSummary}</p>
                     <p><strong>Average Marks:</strong> ${marks}%</p>
-                    <p><strong>Bursary Availability:</strong> ${result.prediction}</p>
+                    <p><strong>Bursary Availability:</strong> ${result.prediction === 'Rich' ? 'High Bursary Availability' : result.prediction === 'Moderate' ? 'Moderate Bursary Availability' : 'Low Bursary Availability'}</p>
                     <p><strong>Confidence:</strong> ${result.confidence}</p>
                     <div class="bursary-box">
                         <strong>Bursary Advice:</strong><br>
