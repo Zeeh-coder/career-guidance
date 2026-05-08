@@ -33,6 +33,10 @@ def home():
 def home_page():
     return send_from_directory('.', 'index.html')
 
+@app.route('/platform')
+def platform():
+    return send_from_directory('.', 'platform.html')
+
 @app.route('/login-page')
 def login_page():
     return send_from_directory('.', 'login.html')
@@ -120,13 +124,16 @@ def predict():
     universities = university_map.get(field, ['Please consult your institution'])
     skills = skills_map.get(field, ['Communication', 'Critical Thinking', 'Problem Solving'])
 
+    reasoning = f"You selected {field} as your field of study. Based on your NQF level {nqf_level} and {skills_count} subjects, the system recommends careers in {field}. Your top recommended career is {careers[0]} which requires skills like {', '.join(skills[:3])}. Your bursary availability is predicted to be {prediction} with {confidence}% confidence."
+
     return jsonify({
         'prediction': prediction,
         'confidence': f'{confidence}%',
         'message': f'Bursary availability is predicted to be {prediction}',
         'careers': careers,
         'universities': universities,
-        'skills': skills
+        'skills': skills,
+        'reasoning': reasoning
     })
 
 @app.route('/predictions', methods=['GET'])
