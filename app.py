@@ -135,7 +135,36 @@ def predict():
         'skills': skills,
         'reasoning': reasoning
     })
+import requests
 
+@app.route('/chat', methods=['POST'])
+def chat():
+    data = request.json
+    messages = data.get('messages', [])
+    
+    response = requests.post(
+        'https://api.anthropic.com/v1/messages',
+        headers={
+            'Content-Type': 'application/json',
+            'x-api-key': os.environ.get('ANTHROPIC_API_KEY', ''),
+            'anthropic-version': '2023-06-01'
+        },
+        json={
+            'model': 'claude-sonnet-4-20250514',
+            'max_tokens': 1000,
+            'system': 'You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.',
+            'messages': messages
+        }
+    )
+    
+    result = response.json()
+    reply = ''
+    if 'content' in result:
+        reply = ''.join([b.get('text', '') for b in result['content']])
+    else:
+        reply = 'I am having trouble responding right now. Please try again.'
+    
+    return jsonify({'reply': reply})
 @app.route('/predictions', methods=['GET'])
 def predictions():
     rows = get_all_predictions()
