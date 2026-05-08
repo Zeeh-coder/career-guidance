@@ -603,11 +603,16 @@
 
 <script>
 // ---- PAGE NAVIGATION ----
+
+// Override showPage to load dashboard data when teacher opens dashboard
+const _origShowPage = window.showPage || showPage;
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   window.scrollTo(0, 0);
+  if (name === 'dashboard') loadDashboard();
 }
+
 
 // ---- CHIP TOGGLE ----
 function toggleChip(el) { el.classList.toggle('selected'); }
@@ -620,41 +625,54 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
 }
 
-// ---- API URL ----
+// ---- PROFILE SUBMIT → RESULTS ----
+// ================================================================
+// BACKEND BRIDGE - Connects to Flask API on Render
+// API: https://career-guidance-p6j0.onrender.com
+// ================================================================
+
 const API_URL = 'https://career-guidance-p6j0.onrender.com';
 
-// ---- FIELD DETECTION FROM SUBJECTS ----
+// Detects field of study from selected subjects
 function detectField(subjects) {
   const s = subjects.join(' ').toLowerCase();
-  if (s.includes('physical sciences') || s.includes('information technology') || s.includes('computer')) return 'STEM';
-  if (s.includes('life sciences')) return 'Health';
-  if (s.includes('engineering') || s.includes('graphics')) return 'Engineering';
-  if (s.includes('accounting') || s.includes('economics') || s.includes('business')) return 'Business';
-  if (s.includes('visual arts') || s.includes('music') || s.includes('dramatic')) return 'Arts';
+  if (s.includes('physical sciences') || s.includes('information technology') || s.includes('computer applications')) return 'STEM';
+  if (s.includes('life sciences') || s.includes('health')) return 'Health';
+  if (s.includes('engineering') || s.includes('technical drawing')) return 'Engineering';
+  if (s.includes('accounting') || s.includes('economics') || s.includes('business studies')) return 'Business';
+  if (s.includes('visual arts') || s.includes('music') || s.includes('dramatic art')) return 'Arts';
   if (s.includes('history') || s.includes('geography') || s.includes('life orientation')) return 'Education';
+  if (s.includes('mathematics') || s.includes('mathematical literacy')) return 'STEM';
   return 'STEM';
 }
 
-// ---- PROFILE SUBMIT connected to your API ----
+// Main function - sends student data to Flask API and displays results
 async function submitProfile() {
+  // Step 1: Collect student inputs from the form
   const name = document.getElementById('full-name').value.trim() || 'Student';
   const grade = document.getElementById('grade').value;
-  const subjects = [...document.querySelectorAll('.subject-chip.selected')].map(c => c.textContent);
+  const subjects = [...document.querySelectorAll('.subject-chip.selected')].map(c => c.textContent.trim());
+  const interests = [...document.querySelectorAll('.interest-item input:checked')].map(c => c.parentElement.textContent.trim());
 
+  // Step 2: Validate - at least one subject must be selected
   if (subjects.length === 0) {
-    alert('Please select at least one subject.');
+    alert('Please select at least one subject before continuing.');
     return;
   }
 
+  // Step 3: Determine field and NQF level from inputs
   const field = detectField(subjects);
-  const nqfMap = { 'Grade 10': 4, 'Grade 11': 4, 'Grade 12': 4 };
+  const nqfMap = { 'Grade 10': 4, 'Grade 11': 4, 'Grade 12': 4, 'First Year': 6 };
   const nqf_level = nqfMap[grade] || 7;
 
+  // Step 4: Show loading state on button
   const btn = document.querySelector('.submit-btn');
+  const originalText = btn.textContent;
   btn.textContent = 'Getting recommendations...';
   btn.disabled = true;
 
   try {
+    // Step 5: Send POST request to Flask /predict endpoint
     const response = await fetch(API_URL + '/predict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -669,58 +687,158 @@ async function submitProfile() {
       })
     });
 
+    // Step 6: Parse the response from the API
     const result = await response.json();
 
-    let bursaryLabel = result.prediction === 'Rich' ? 'High Bursary Availability' :
-                       result.prediction === 'Moderate' ? 'Moderate Bursary Availability' : 'Limited Bursary Availability';
-    let bursaryAdvice = result.prediction === 'Rich' ? 'You qualify for NSFAS, ISFAP, CSIR and Funza Lushaka.' :
-                        result.prediction === 'Moderate' ? 'You qualify for NSFAS and ISFAP.' :
-                        'You may qualify for NSFAS. Focus on improving your marks.';
+    // Step 7: Build bursary advice from prediction
+    const bursaryLabel = result.prediction === 'Rich' ? 'High Bursary Availability' :
+                         result.prediction === 'Moderate' ? 'Moderate Bursary Availability' :
+                         'Limited Bursary Availability';
 
+    const bursaryAdvice = result.prediction === 'Rich'
+      ? 'You qualify for NSFAS, ISFAP, CSIR and Funza Lushaka based on your profile.'
+      : result.prediction === 'Moderate'
+      ? 'You qualify for NSFAS and ISFAP. Keep improving your academic record.'
+      : 'You may qualify for NSFAS. Focus on improving your marks to access more bursaries.';
+
+    // Step 8: Update the results heading
     document.getElementById('results-greeting').textContent = 'Career Recommendations for ' + name;
-    document.getElementById('results-sub').textContent = 'Based on your ' + subjects.length + ' subjects in ' + field + ', here are your top career matches with ' + result.confidence + ' confidence.';
+    document.getElementById('results-sub').textContent =
+      'Based on your ' + subjects.length + ' subjects in ' + field +
+      ', here are your top career matches with ' + result.confidence + ' confidence.';
 
+    // Step 9: Build and display the result cards
     const container = document.getElementById('results-cards');
     container.innerHTML = '';
 
-    container.innerHTML += '<div class="career-card" style="background:#f0fdf4;border-color:#86efac;">' +
-      '<div class="career-card-header"><div>' +
-      '<div class="career-title">' + bursaryLabel + '</div>' +
-      '<div style="font-size:13px;color:#6b7280">Financial Support - ' + result.confidence + ' confidence</div>' +
-      '</div></div>' +
-      '<p class="career-desc">' + bursaryAdvice + '</p>' +
-      (result.reasoning ? '<p style="font-size:13px;color:#374151;margin-top:8px;"><strong>Why:</strong> ' + result.reasoning + '</p>' : '') +
-      '</div>';
+    // Bursary card (always first)
+    container.innerHTML += `
+      <div class="career-card" style="background:#f0fdf4;border:1px solid #86efac;">
+        <div class="career-card-header">
+          <div>
+            <div class="career-title">${bursaryLabel}</div>
+            <div style="font-size:13px;color:#6b7280">Financial Support Prediction — ${result.confidence} confidence</div>
+          </div>
+        </div>
+        <p class="career-desc">${bursaryAdvice}</p>
+        ${result.reasoning ? `<p style="font-size:13px;color:#374151;margin-top:8px;padding-top:8px;border-top:1px solid #dcfce7"><strong>Why:</strong> ${result.reasoning}</p>` : ''}
+      </div>
+    `;
 
-    if (result.careers) {
-      result.careers.forEach(function(career, i) {
+    // Career recommendation cards from the model
+    if (result.careers && result.careers.length > 0) {
+      result.careers.forEach((career, i) => {
         const matchScore = Math.max(70, 95 - i * 5);
-        container.innerHTML += '<div class="career-card">' +
-          '<div class="career-card-header"><div>' +
-          '<div class="career-title">' + career + '</div>' +
-          '<div style="font-size:13px;color:#6b7280">' + field + '</div>' +
-          '</div><div class="match-badge">' + matchScore + '% Match</div></div>' +
-          '<p class="career-desc">This career aligns with your ' + field + ' background and selected subjects.</p>' +
-          '<div class="career-tags">' +
-          subjects.slice(0,3).map(function(s){ return '<span class="tag">' + s + '</span>'; }).join('') +
-          (result.skills ? result.skills.slice(0,2).map(function(s){ return '<span class="tag green">' + s + '</span>'; }).join('') : '') +
-          '</div>' +
-          '<div class="career-footer">' +
-          '<small>Recommended: ' + (result.universities ? result.universities.join(', ') : 'UKZN, UNIZULU') + '</small>' +
-          '<button class="learn-btn" onclick="askAboutCareer(\'' + career + '\')">Learn More</button>' +
-          '</div></div>';
+        container.innerHTML += `
+          <div class="career-card">
+            <div class="career-card-header">
+              <div>
+                <div class="career-title">${career}</div>
+                <div style="font-size:13px;color:#6b7280">${field}</div>
+              </div>
+              <div class="match-badge">${matchScore}% Match</div>
+            </div>
+            <p class="career-desc">
+              This career aligns with your ${field} background.
+              ${result.skills ? 'Key skills needed: ' + result.skills.slice(0,3).join(', ') + '.' : ''}
+            </p>
+            <div class="career-tags">
+              ${subjects.slice(0,3).map(s => `<span class="tag">${s}</span>`).join('')}
+              ${result.skills ? result.skills.slice(0,2).map(s => `<span class="tag green">${s}</span>`).join('') : ''}
+            </div>
+            <div class="career-footer">
+              <small>Recommended universities: ${result.universities ? result.universities.join(', ') : 'UKZN, UNIZULU, DUT'}</small>
+              <button class="learn-btn" onclick="askAboutCareer('${career}')">Learn More →</button>
+            </div>
+          </div>
+        `;
       });
     }
 
+    // Step 10: Navigate to results page
     showPage('results');
 
-  } catch(err) {
-    alert('Could not connect to the API. Please try again.');
+  } catch (err) {
+    // Handle API connection errors
+    alert('Could not connect to the API. Please check your internet connection and try again.');
+    console.error('API Error:', err);
   } finally {
-    btn.textContent = 'Get My Career Recommendations →';
+    // Always restore the button
+    btn.textContent = originalText;
     btn.disabled = false;
   }
 }
+
+// Dashboard loader - fetches real predictions from the database
+async function loadDashboard() {
+  try {
+    const response = await fetch(API_URL + '/predictions');
+    const data = await response.json();
+
+    if (!data || data.length === 0) return;
+
+    const flaggedTab = document.getElementById('tab-flagged');
+    if (!flaggedTab) return;
+
+    const rich = data.filter(d => d.prediction === 'Rich').length;
+    const limited = data.filter(d => d.prediction === 'Limited').length;
+
+    flaggedTab.innerHTML = `
+      <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 20px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:#16a34a">${data.length}</div>
+          <div style="font-size:12px;color:#6b7280">Total Predictions</div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 20px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:#16a34a">${rich}</div>
+          <div style="font-size:12px;color:#6b7280">High Availability</div>
+        </div>
+        <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:12px 20px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:#dc2626">${limited}</div>
+          <div style="font-size:12px;color:#6b7280">Need Support</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+          <thead>
+            <tr style="background:#1a1a2e;color:white">
+              <th style="padding:12px;text-align:left">#</th>
+              <th style="padding:12px;text-align:left">Field</th>
+              <th style="padding:12px;text-align:left">Institution</th>
+              <th style="padding:12px;text-align:left">NQF</th>
+              <th style="padding:12px;text-align:left">Prediction</th>
+              <th style="padding:12px;text-align:left">Confidence</th>
+              <th style="padding:12px;text-align:left">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((row, i) => {
+              const badgeColor = row.prediction === 'Rich' ? 'background:#dcfce7;color:#16a34a' :
+                                 row.prediction === 'Moderate' ? 'background:#fef9c3;color:#ca8a04' :
+                                 'background:#fee2e2;color:#dc2626';
+              const date = row.timestamp ? row.timestamp.split(' ')[0] : '';
+              return `
+                <tr style="border-bottom:1px solid #f3f4f6">
+                  <td style="padding:12px">${i+1}</td>
+                  <td style="padding:12px">${row.field || ''}</td>
+                  <td style="padding:12px">${row.institution || ''}</td>
+                  <td style="padding:12px">${row.nqf_level || ''}</td>
+                  <td style="padding:12px"><span style="padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;${badgeColor}">${row.prediction || ''}</span></td>
+                  <td style="padding:12px">${row.confidence || ''}</td>
+                  <td style="padding:12px">${date}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch(e) {
+    console.log('Dashboard load error:', e);
+  }
+}
+
+
 
 function askAboutCareer(title) {
   showPage('assistant');
@@ -798,64 +916,6 @@ function handleChatKey(e) {
     e.preventDefault();
     sendMessage();
   }
-}
-
-// ---- LOAD REAL DASHBOARD DATA FROM API ----
-async function loadDashboard() {
-  try {
-    const response = await fetch('https://career-guidance-p6j0.onrender.com/predictions');
-    const data = await response.json();
-
-    if (data.length === 0) return;
-
-    // Update stats
-    document.querySelector('.stat-blue .stat-value').textContent = data.length;
-
-    const rich = data.filter(d => d.prediction === 'Rich').length;
-    const limited = data.filter(d => d.prediction === 'Limited').length;
-    document.querySelector('.stat-green .stat-value').textContent = rich;
-    document.querySelector('.stat-orange .stat-value').textContent = limited;
-
-    // Build predictions table in flagged tab
-    const flaggedTab = document.getElementById('tab-flagged');
-    flaggedTab.innerHTML = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:white;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">' +
-      '<thead><tr style="background:#1a1a2e;color:white">' +
-      '<th style="padding:12px;text-align:left;font-size:13px">#</th>' +
-      '<th style="padding:12px;text-align:left;font-size:13px">Field</th>' +
-      '<th style="padding:12px;text-align:left;font-size:13px">Institution</th>' +
-      '<th style="padding:12px;text-align:left;font-size:13px">NQF</th>' +
-      '<th style="padding:12px;text-align:left;font-size:13px">Skills</th>' +
-      '<th style="padding:12px;text-align:left;font-size:13px">Prediction</th>' +
-      '<th style="padding:12px;text-align:left;font-size:13px">Confidence</th>' +
-      '<th style="padding:12px;text-align:left;font-size:13px">Date</th>' +
-      '</tr></thead><tbody>' +
-      data.map(function(row, i) {
-        const badgeColor = row.prediction === 'Rich' ? '#dcfce7;color:#16a34a' :
-                           row.prediction === 'Moderate' ? '#fef9c3;color:#ca8a04' : '#fee2e2;color:#dc2626';
-        const date = row.timestamp ? row.timestamp.split(' ')[0] : '';
-        return '<tr style="border-bottom:1px solid #f3f4f6">' +
-          '<td style="padding:12px;font-size:13px">' + (i+1) + '</td>' +
-          '<td style="padding:12px;font-size:13px">' + (row.field || '') + '</td>' +
-          '<td style="padding:12px;font-size:13px">' + (row.institution || '') + '</td>' +
-          '<td style="padding:12px;font-size:13px">' + (row.nqf_level || '') + '</td>' +
-          '<td style="padding:12px;font-size:13px">' + (row.skills_count || '') + '</td>' +
-          '<td style="padding:12px;font-size:13px"><span style="padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;background:' + badgeColor + '">' + row.prediction + '</span></td>' +
-          '<td style="padding:12px;font-size:13px">' + (row.confidence || '') + '</td>' +
-          '<td style="padding:12px;font-size:13px">' + date + '</td>' +
-          '</tr>';
-      }).join('') +
-      '</tbody></table></div>';
-
-  } catch(err) {
-    console.log('Dashboard load error:', err);
-  }
-}
-
-// Load dashboard when page changes to dashboard
-const originalShowPage = showPage;
-function showPage(name) {
-  originalShowPage(name);
-  if (name === 'dashboard') loadDashboard();
 }
 </script>
 </body>
