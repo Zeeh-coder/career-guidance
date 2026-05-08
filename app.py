@@ -136,34 +136,50 @@ def predict():
         'reasoning': reasoning
     })
 import requests
-
 @app.route('/chat', methods=['POST'])
 def chat():
-    data = request.json
-    messages = data.get('messages', [])
-    
-    response = requests.post(
-        'https://api.anthropic.com/v1/messages',
-        headers={
-            'Content-Type': 'application/json',
-            'x-api-key': os.environ.get('ANTHROPIC_API_KEY', ''),
-            'anthropic-version': '2023-06-01'
-        },
-        json={
-            'model': 'claude-sonnet-4-20250514',
-            'max_tokens': 1000,
-            'system': 'You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.',
-            'messages': messages
-        }
-    )
-    
-    result = response.json()
-    reply = ''
-    if 'content' in result:
-        reply = ''.join([b.get('text', '') for b in result['content']])
-    else:
-        reply = 'I am having trouble responding right now. Please try again.'
-    
+    try:
+        data = request.json
+        messages = data.get('messages', [])
+        
+        api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+        
+        if not api_key:
+            return jsonify({'reply': 'API key is missing. Please set ANTHROPIC_API_KEY on Render.'})
+        
+        response = requests.post(
+            'https://api.anthropic.com/v1/messages',
+            headers={
+                'Content-Type': 'application/json',
+                'x-api-key': api_key,
+                'anthropic-version': '2023-06-01'
+            },
+            json={
+                'model': 'claude-sonnet-4-20250514',
+                'max_tokens': 1000,
+                'system': 'You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.',
+                'messages': messages
+            },
+            timeout=30
+        )
+        
+        result = response.json()
+        
+        if 'content' in result:
+            reply = ''.join([b.get('text', '') for b in result['content']])
+            return jsonify({'reply': reply})
+        elif 'error' in result:
+            return jsonify({'reply': 'API error: ' + str(result['error'].get('message', 'Unknown error'))})
+        else:
+            return jsonify({'reply': 'Unexpected response from AI. Please try again.'})
+            
+    except requests.exceptions.Timeout:
+        return jsonify({'reply': 'The AI took too long to respond. Please try again.'})
+    except requests.exceptions.ConnectionError:
+        return jsonify({'reply': 'Could not connect to the AI service. Please check your internet connection.'})
+    except Exception as e:
+        return jsonify({'reply': 'Error: ' + str(e)})
+
     return jsonify({'reply': reply})
 @app.route('/predictions', methods=['GET'])
 def predictions():
