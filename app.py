@@ -141,42 +141,44 @@ def chat():
     try:
         data = request.json
         messages = data.get('messages', [])
-        
-        api_key = os.environ.get('ANTHROPIC_API_KEY', '')
-        
+        api_key = os.environ.get('GEMINI_API_KEY', '')
+
         if not api_key:
-            return jsonify({'reply': 'API key is missing. Please set ANTHROPIC_API_KEY on Render.'})
-        
+            return jsonify({'reply': 'API key is missing. Please set GEMINI_API_KEY on Render.'})
+
+        # Convert messages to Gemini format
+        gemini_messages = []
+        for msg in messages:
+            role = 'user' if msg['role'] == 'user' else 'model'
+            gemini_messages.append({
+                'role': role,
+                'parts': [{'text': msg['content']}]
+            })
+
         response = requests.post(
-            'https://api.anthropic.com/v1/messages',
-            headers={
-                'Content-Type': 'application/json',
-                'x-api-key': api_key,
-                'anthropic-version': '2023-06-01'
-            },
+            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}',
+            headers={'Content-Type': 'application/json'},
             json={
-                'model': 'claude-sonnet-4-20250514',
-                'max_tokens': 1000,
-                'system': 'You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.',
-                'messages': messages
+                'system_instruction': {
+                    'parts': [{'text': 'You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.'}]
+                },
+                'contents': gemini_messages
             },
             timeout=30
         )
-        
+
         result = response.json()
-        
-        if 'content' in result:
-            reply = ''.join([b.get('text', '') for b in result['content']])
+
+        if 'candidates' in result:
+            reply = result['candidates'][0]['content']['parts'][0]['text']
             return jsonify({'reply': reply})
         elif 'error' in result:
             return jsonify({'reply': 'API error: ' + str(result['error'].get('message', 'Unknown error'))})
         else:
-            return jsonify({'reply': 'Unexpected response from AI. Please try again.'})
-            
+            return jsonify({'reply': 'Unexpected response. Please try again.'})
+
     except requests.exceptions.Timeout:
         return jsonify({'reply': 'The AI took too long to respond. Please try again.'})
-    except requests.exceptions.ConnectionError:
-        return jsonify({'reply': 'Could not connect to the AI service. Please check your internet connection.'})
     except Exception as e:
         return jsonify({'reply': 'Error: ' + str(e)})
 
