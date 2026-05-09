@@ -4,8 +4,10 @@ import joblib
 import numpy as np
 import os
 import requests
+from google import genai
+from google.genai import types
 from database import init_db, save_consent, save_prediction, get_all_predictions, register_user, login_user
-import google.generativeai as genai
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.urandom(24)
@@ -33,6 +35,7 @@ def home():
 @app.route('/home')
 def home_page():
     return send_from_directory('.', 'platform.html')
+
 @app.route('/platform')
 def platform():
     return send_from_directory('.', 'platform.html')
@@ -135,8 +138,6 @@ def predict():
         'reasoning': reasoning
     })
 
-    
-
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -147,47 +148,30 @@ def chat():
         if not api_key:
             return jsonify({'reply': 'API key is missing. Please set GEMINI_API_KEY on Render.'})
 
-        # Configure the library with your key
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
 
-        # Use the correct model
-        gemini_model = genai.GenerativeModel(
-            model_name='gemini-2.0-flash',
-            system_instruction='You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.'
+        contents = []
+        for msg in messages:
+            role = 'user' if msg['role'] == 'user' else 'model'
+            contents.append(types.Content(
+                role=role,
+                parts=[types.Part(text=msg['content'])]
+            ))
+
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction='You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.',
+                max_output_tokens=1000
+            )
         )
-
-        # Convert messages to Gemini format
-        history = []
-        for msg in messages[:-1]:
-            history.append({
-                'role': 'user' if msg['role'] == 'user' else 'model',
-                'parts': [msg['content']]
-            })
-
-        # Start chat with history
-        chat_session = gemini_model.start_chat(history=history)
-
-        # Send the latest message
-        last_message = messages[-1]['content'] if messages else 'Hello'
-        response = chat_session.send_message(last_message)
 
         return jsonify({'reply': response.text})
 
     except Exception as e:
         return jsonify({'reply': 'Error: ' + str(e)})
-@app.route('/test-gemini')
-def test_gemini():
-    api_key = os.environ.get('GEMINI_API_KEY', '')
-    if not api_key:
-        return jsonify({'error': 'No API key found'})
-    response = requests.get(
-        f'https://generativelanguage.googleapis.com/v1beta/models?key={api_key}'
-    )
-    data = response.json()
-    if 'models' in data:
-        names = [m['name'] for m in data['models']]
-        return jsonify({'available_models': names})
-    return jsonify(data)
+
 @app.route('/predictions', methods=['GET'])
 def predictions():
     rows = get_all_predictions()
