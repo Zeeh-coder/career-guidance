@@ -163,7 +163,7 @@ def chat():
            model='gemini-2.0-flash-lite',
             contents=contents,
             config=types.GenerateContentConfig(
-                system_instruction='You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.',
+                system_instruction='SA career guidance assistant. Help students with careers, bursaries, universities.',system_instruction='SA career guidance assistant. Help students with careers, bursaries, universities.',
                 max_output_tokens=1000
             )
         )
