@@ -261,7 +261,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
         Ask AI Career Assistant
       </button>
-      <button class="btn-secondary" onclick="showPage('profile')">Get Personalized Recommendations</button>
+      <button onclick="showPage('login')" style="padding:10px 24px;background:#1a1a2e;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">Login / Register</button>
     </div>
   </div>
 
@@ -856,7 +856,26 @@ async function loadDashboard() {
     console.log('Dashboard load error:', e);
   }
 }
-
+// Bias monitoring
+const fields = {};
+data.forEach(d => { fields[d.field] = (fields[d.field] || 0) + 1; });
+const biasTab = document.getElementById('tab-bias');
+if (biasTab) {
+  biasTab.innerHTML = '<h3 style="margin-bottom:16px">Field Distribution Analysis</h3>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:12px">' +
+    Object.entries(fields).map(([field, count]) => {
+      const pct = Math.round((count / data.length) * 100);
+      const flag = pct > 60 ? ' ⚠️ Possible bias' : '';
+      return `<div style="background:white;border-radius:8px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.1);min-width:150px">
+        <div style="font-weight:600">${field}</div>
+        <div style="font-size:24px;color:#1a1a2e;font-weight:700">${pct}%</div>
+        <div style="font-size:12px;color:#6b7280">${count} predictions${flag}</div>
+        <div style="background:#f3f4f6;border-radius:4px;height:8px;margin-top:8px">
+          <div style="background:#1a1a2e;height:8px;border-radius:4px;width:${pct}%"></div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+}
 
 function addMsg(role, text) {
   const container = document.getElementById('chat-messages');
