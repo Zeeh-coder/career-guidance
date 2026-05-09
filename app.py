@@ -139,57 +139,193 @@ def predict():
     })
 
 @app.route('/chat', methods=['POST'])
+@app.route('/chat', methods=['POST'])
 def chat():
     try:
         data = request.json
         messages = data.get('messages', [])
+        if not messages:
+            return jsonify({'reply': 'Hello! I am your Career Guidance Assistant. Ask me anything about careers, bursaries or universities!'})
 
-        api_key = os.environ.get('GEMINI_API_KEY', '')
-        print(f"API KEY FIRST 10 CHARS: {api_key[:10]}")                     
-        if not api_key:
-            return jsonify({'reply': 'API key is missing. Please set GEMINI_API_KEY on Render.'})
+        last_message = messages[-1]['content'].lower()
 
-        client = genai.Client(api_key=api_key)
+        if any(w in last_message for w in ['nsfas', 'bursary', 'bursaries', 'funding', 'isfap', 'financial']):
+            reply = """Here are the main bursaries for South African students:
 
-        contents = []
-        for msg in messages:
-            role = 'user' if msg['role'] == 'user' else 'model'
-            contents.append(types.Content(
-                role=role,
-                parts=[types.Part(text=msg['content'])]
-            ))
+**NSFAS** — For households earning less than R350,000/year. Covers tuition, accommodation and meals. Apply at nsfas.org.za
 
-        response = client.models.generate_content(
-           model='gemini-2.0-flash-lite',
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction='SA career guidance assistant. Help students with careers, bursaries, universities.',system_instruction='SA career guidance assistant. Help students with careers, bursaries, universities.',
-                max_output_tokens=1000
-            )
-        )
+**ISFAP** — For missing middle students. Full cost of study covered. Apply at isfap.org.za
 
-        return jsonify({'reply': response.text})
+**CSIR** — For STEM students. Tuition plus monthly stipend.
+
+**Funza Lushaka** — For teaching students. Full bursary plus R7,000/month allowance.
+
+**Anglo American** — For Engineering and Mining students.
+
+Apply early — most bursaries open in March for the following year!"""
+
+        elif any(w in last_message for w in ['engineering', 'civil', 'electrical', 'mechanical']):
+            reply = """Engineering is an excellent career in South Africa!
+
+**Popular careers:** Civil Engineer, Electrical Engineer, Mechanical Engineer, Chemical Engineer
+
+**Requirements:** Mathematics and Physical Sciences at 60%+
+
+**Best universities:** DUT, UKZN, Wits, UCT, UP
+
+**Bursaries:** CSIR, Anglo American, Eskom, Sasol
+
+**Starting salary:** R350,000 - R500,000/year"""
+
+        elif any(w in last_message for w in ['medicine', 'doctor', 'mbchb', 'health', 'nursing', 'nurse', 'pharmacy']):
+            reply = """Healthcare is one of the most rewarding careers!
+
+**Popular careers:** Medical Doctor (MBChB - 6 years), Nurse (4 years), Pharmacist (4 years), Physiotherapist (4 years)
+
+**Requirements for Medicine:** Mathematics and Life Sciences at 70%+. APS score of 36+
+
+**Best universities:** UKZN Medical School, UP, UCT, Wits, Stellenbosch
+
+**Bursaries:** Department of Health bursary, NSFAS"""
+
+        elif any(w in last_message for w in ['computer', 'software', 'it ', 'programming', 'coding', 'data science', 'stem', 'technology']):
+            reply = """Technology careers are in high demand in South Africa!
+
+**Popular careers:** Software Engineer, Data Scientist, Cybersecurity Analyst, IT Support
+
+**Requirements:** Mathematics at 50%+
+
+**Best universities:** UNIZULU, UKZN, Wits, UCT, CPUT
+
+**Bursaries:** CSIR, Vodacom, MTN, Standard Bank
+
+South Africa has a huge shortage of IT professionals — excellent job opportunities!"""
+
+        elif any(w in last_message for w in ['business', 'accounting', 'finance', 'economics', 'bcom']):
+            reply = """Business and Finance careers offer great opportunities!
+
+**Popular careers:** Chartered Accountant (CA), Business Analyst, Financial Manager, Economist
+
+**Requirements:** Mathematics at 50%+. Accounting is very helpful.
+
+**Best universities:** UNIZULU, UKZN, UJ, UP, Stellenbosch
+
+**Bursaries:** SAICA, major banks, NSFAS
+
+CA(SA) is one of the highest paid qualifications in South Africa!"""
+
+        elif any(w in last_message for w in ['teaching', 'teacher', 'education', 'bed', 'pgce']):
+            reply = """Teaching is one of the most impactful careers!
+
+**Qualifications:** BEd (4 years) or PGCE (1 year after a degree)
+
+**Requirements:** Any matric subjects depending on what you want to teach
+
+**Best universities:** UNIZULU, UKZN, UNISA, UP
+
+**Bursaries:** Funza Lushaka — full tuition plus R7,000/month!
+
+South Africa needs good teachers urgently — great job security!"""
+
+        elif any(w in last_message for w in ['ukzn', 'unizulu', 'dut', 'university', 'universities', 'college', 'apply', 'application']):
+            reply = """Key South African universities:
+
+**UNIZULU (University of Zululand)** — KwaZulu-Natal. Strong in Education, Arts, Science. unizulu.ac.za
+
+**UKZN** — Multiple KZN campuses. Strong in Medicine, Engineering, Law. ukzn.ac.za
+
+**DUT (Durban University of Technology)** — Strong in Engineering, IT, Business. dut.ac.za
+
+**Tips:** Apply before September. Apply to at least 3 universities. Apply for NSFAS at the same time!"""
+
+        elif any(w in last_message for w in ['matric', 'grade 12', 'aps', 'marks', 'subjects', 'subject']):
+            reply = """Matric and APS advice:
+
+**APS Score calculation** (6 best subjects):
+- 80-100% = 7 points
+- 70-79% = 6 points  
+- 60-69% = 5 points
+- 50-59% = 4 points
+- 40-49% = 3 points
+
+**Minimum APS:** Medicine 36+ | Engineering 30+ | Teaching 24+ | Business 26+
+
+**Important:** Mathematics (not Maths Literacy) opens far more career doors!"""
+
+        elif any(w in last_message for w in ['salary', 'earn', 'money', 'paid', 'income']):
+            reply = """Typical starting salaries in South Africa:
+
+**High earning:**
+- Medical Doctor: R600,000 - R1,200,000/year
+- Chartered Accountant: R500,000 - R800,000/year
+- Software Engineer: R400,000 - R700,000/year
+- Civil Engineer: R350,000 - R600,000/year
+
+**Mid range:**
+- Teacher: R200,000 - R350,000/year
+- Nurse: R180,000 - R300,000/year
+
+Salary grows with experience. Choose work you enjoy — success follows passion!"""
+
+        elif any(w in last_message for w in ['hello', 'hi', 'hey', 'sawubona', 'good morning', 'good afternoon']):
+            reply = """Hello! Welcome to the Career Guidance Assistant!
+
+I can help you with:
+- Career recommendations based on your subjects
+- Bursary information (NSFAS, ISFAP, Funza Lushaka)
+- University information and applications
+- Matric and APS score advice
+- Salary expectations
+
+What would you like to know? Just ask!"""
+
+        elif any(w in last_message for w in ['mathematics', 'maths', 'math']):
+            reply = """Mathematics opens many doors in South Africa!
+
+**Careers with Mathematics:**
+- Engineering (Civil, Electrical, Mechanical)
+- Data Science and Software Engineering
+- Accounting and Finance (CA, CFO)
+- Medicine and Pharmacy
+- Teaching (Maths teacher — very high demand!)
+- Architecture
+
+**Key point:** Always take Pure Mathematics over Mathematical Literacy if possible. It dramatically increases your career options and university admission chances!"""
+
+        elif any(w in last_message for w in ['life sciences', 'biology']):
+            reply = """Life Sciences leads to many exciting careers!
+
+**Careers with Life Sciences:**
+- Medical Doctor
+- Nurse or Physiotherapist
+- Pharmacist
+- Environmental Scientist
+- Biotechnologist
+- Teacher (Life Sciences)
+
+**Best combination:** Life Sciences + Mathematics + Physical Sciences gives you access to Medicine, Pharmacy and all health careers.
+
+**Universities:** UKZN Medical School, UP, Stellenbosch, UNIZULU"""
+
+        else:
+            reply = """Thank you for your question! I am your South African Career Guidance Assistant.
+
+I can help you with:
+- **Careers** — Engineering, Medicine, IT, Teaching, Business
+- **Bursaries** — NSFAS, ISFAP, Funza Lushaka, CSIR
+- **Universities** — UNIZULU, UKZN, DUT and others
+- **Subjects** — matric requirements and APS scores
+- **Salaries** — what you can expect to earn
+
+Try asking:
+- "What careers suit Mathematics?"
+- "How do I apply for NSFAS?"
+- "What APS do I need for Engineering?"
+- "Tell me about UKZN"
+
+I am here to help! 😊"""
+
+        return jsonify({'reply': reply})
 
     except Exception as e:
         return jsonify({'reply': 'Error: ' + str(e)})
-
-@app.route('/predictions', methods=['GET'])
-def predictions():
-    rows = get_all_predictions()
-    result = []
-    for row in rows:
-        result.append({
-            'id': row[0],
-            'nqf_level': row[1],
-            'duration': row[2],
-            'skills_count': row[3],
-            'field': row[4],
-            'institution': row[5],
-            'prediction': row[6],
-            'confidence': row[7],
-            'timestamp': row[8]
-        })
-    return jsonify(result)
-
-if __name__ == '__main__':
-    app.run(debug=True)
