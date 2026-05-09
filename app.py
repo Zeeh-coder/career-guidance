@@ -3,6 +3,7 @@ from flask_cors import CORS
 import joblib
 import numpy as np
 import os
+import requests
 from database import init_db, save_consent, save_prediction, get_all_predictions, register_user, login_user
 
 app = Flask(__name__)
@@ -123,7 +124,6 @@ def predict():
     careers = career_map.get(field, ['Please consult a career counsellor'])
     universities = university_map.get(field, ['Please consult your institution'])
     skills = skills_map.get(field, ['Communication', 'Critical Thinking', 'Problem Solving'])
-
     reasoning = f"You selected {field} as your field of study. Based on your NQF level {nqf_level} and {skills_count} subjects, the system recommends careers in {field}. Your top recommended career is {careers[0]} which requires skills like {', '.join(skills[:3])}. Your bursary availability is predicted to be {prediction} with {confidence}% confidence."
 
     return jsonify({
@@ -135,7 +135,7 @@ def predict():
         'skills': skills,
         'reasoning': reasoning
     })
-import requests
+
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -146,7 +146,6 @@ def chat():
         if not api_key:
             return jsonify({'reply': 'API key is missing. Please set GEMINI_API_KEY on Render.'})
 
-        # Convert messages to Gemini format
         gemini_messages = []
         for msg in messages:
             role = 'user' if msg['role'] == 'user' else 'model'
@@ -182,7 +181,6 @@ def chat():
     except Exception as e:
         return jsonify({'reply': 'Error: ' + str(e)})
 
-    return jsonify({'reply': reply})
 @app.route('/predictions', methods=['GET'])
 def predictions():
     rows = get_all_predictions()
