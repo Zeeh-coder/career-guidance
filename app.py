@@ -5,7 +5,7 @@ import numpy as np
 import os
 import requests
 from database import init_db, save_consent, save_prediction, get_all_predictions, register_user, login_user
-
+import google.generativeai as genai
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.urandom(24)
@@ -135,48 +135,44 @@ def predict():
         'reasoning': reasoning
     })
 
+    
+
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         data = request.json
         messages = data.get('messages', [])
-        api_key = os.environ.get('GEMINI_API_KEY', '')
 
+        api_key = os.environ.get('GEMINI_API_KEY', '')
         if not api_key:
             return jsonify({'reply': 'API key is missing. Please set GEMINI_API_KEY on Render.'})
 
-        gemini_messages = []
-        for msg in messages:
-            role = 'user' if msg['role'] == 'user' else 'model'
-            gemini_messages.append({
-                'role': role,
-                'parts': [{'text': msg['content']}]
-            })
+        # Configure the library with your key
+        genai.configure(api_key=api_key)
 
-        response = requests.post(
-            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}',
-            headers={'Content-Type': 'application/json'},
-            json={
-                'system_instruction': {
-                    'parts': [{'text': 'You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.'}]
-                },
-                'contents': gemini_messages
-            },
-            timeout=30
+        # Use the correct model
+        gemini_model = genai.GenerativeModel(
+            model_name='gemini-2.0-flash',
+            system_instruction='You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.'
         )
 
-        result = response.json()
+        # Convert messages to Gemini format
+        history = []
+        for msg in messages[:-1]:
+            history.append({
+                'role': 'user' if msg['role'] == 'user' else 'model',
+                'parts': [msg['content']]
+            })
 
-        if 'candidates' in result:
-            reply = result['candidates'][0]['content']['parts'][0]['text']
-            return jsonify({'reply': reply})
-        elif 'error' in result:
-            return jsonify({'reply': 'API error: ' + str(result['error'].get('message', 'Unknown error'))})
-        else:
-            return jsonify({'reply': 'Unexpected response. Please try again.'})
+        # Start chat with history
+        chat_session = gemini_model.start_chat(history=history)
 
-    except requests.exceptions.Timeout:
-        return jsonify({'reply': 'The AI took too long to respond. Please try again.'})
+        # Send the latest message
+        last_message = messages[-1]['content'] if messages else 'Hello'
+        response = chat_session.send_message(last_message)
+
+        return jsonify({'reply': response.text})
+
     except Exception as e:
         return jsonify({'reply': 'Error: ' + str(e)})
 @app.route('/test-gemini')
