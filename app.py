@@ -154,7 +154,7 @@ def chat():
             })
 
         response = requests.post(
-            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key={api_key}',
+            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}',
             headers={'Content-Type': 'application/json'},
             json={
                 'system_instruction': {
