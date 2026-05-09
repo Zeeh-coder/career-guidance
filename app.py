@@ -145,6 +145,7 @@ def chat():
         messages = data.get('messages', [])
 
         api_key = os.environ.get('GEMINI_API_KEY', '')
+        print(f"API KEY FIRST 10 CHARS: {api_key[:10]}")                     
         if not api_key:
             return jsonify({'reply': 'API key is missing. Please set GEMINI_API_KEY on Render.'})
 
@@ -159,7 +160,7 @@ def chat():
             ))
 
         response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-1.5-flash',
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction='You are an AI Career Guidance Assistant for South African high school and university students. Help them explore career pathways, university requirements, subject choices, bursaries like NSFAS and ISFAP, and study tips. Be warm, encouraging and practical. Focus on the South African context including NQF levels, matric requirements, UKZN, UNIZULU, DUT and other SA institutions.',
