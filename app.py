@@ -32,8 +32,7 @@ def home():
 
 @app.route('/home')
 def home_page():
-    return send_from_directory('.', 'index.html')
-
+    return send_from_directory('.', 'platform.html')
 @app.route('/platform')
 def platform():
     return send_from_directory('.', 'platform.html')
