@@ -179,7 +179,19 @@ def chat():
         return jsonify({'reply': 'The AI took too long to respond. Please try again.'})
     except Exception as e:
         return jsonify({'reply': 'Error: ' + str(e)})
-
+@app.route('/test-gemini')
+def test_gemini():
+    api_key = os.environ.get('GEMINI_API_KEY', '')
+    if not api_key:
+        return jsonify({'error': 'No API key found'})
+    response = requests.get(
+        f'https://generativelanguage.googleapis.com/v1beta/models?key={api_key}'
+    )
+    data = response.json()
+    if 'models' in data:
+        names = [m['name'] for m in data['models']]
+        return jsonify({'available_models': names})
+    return jsonify(data)
 @app.route('/predictions', methods=['GET'])
 def predictions():
     rows = get_all_predictions()
