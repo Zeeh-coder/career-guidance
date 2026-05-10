@@ -266,6 +266,19 @@
         <label class="interest-item"><input type="checkbox"> Environment and nature</label>
       </div>
     </div>
+    <div class="form-section" style="background:#fffbeb;border-color:#fde68a;">
+      <h2>Consent and Privacy</h2>
+      <p class="sec-desc">Please read and agree to both statements before continuing</p>
+      <label class="interest-item" style="margin-bottom:12px">
+        <input type="checkbox" id="consent-platform" style="width:16px;height:16px;accent-color:#4f46e5">
+        <span><strong>Platform Consent:</strong> I agree to use this Career Guidance Platform and understand that AI-generated recommendations are for guidance only and should not replace professional advice.</span>
+      </label>
+      <label class="interest-item">
+        <input type="checkbox" id="consent-data" style="width:16px;height:16px;accent-color:#4f46e5">
+        <span><strong>Data Consent:</strong> I agree to share my academic information (subjects, interests, marks) to receive personalized career recommendations and to contribute to the Living Lab research dataset.</span>
+      </label>
+    </div>
+
     <div class="form-section">
       <h2>Your Marks (%)</h2>
       <p class="sec-desc">Enter your marks to get better bursary advice (optional but recommended)</p>
@@ -378,12 +391,21 @@
       </div>
     </div>
     <div class="tab-bar">
-      <button class="tab active" onclick="switchTab('flagged', this)">Predictions</button>
+      <button class="tab active" onclick="switchTab('flagged', this)">All Predictions</button>
+      <button class="tab" onclick="switchTab('student-flags', this)">Student Flags <span id="student-flags-count" style="background:#dc2626;color:white;border-radius:10px;padding:1px 6px;font-size:11px;margin-left:4px">0</span></button>
       <button class="tab" onclick="switchTab('analytics', this)">Analytics</button>
       <button class="tab" onclick="switchTab('bias', this)">Bias Monitoring</button>
     </div>
     <div class="tab-content active" id="tab-flagged">
       <p style="color:#6b7280;font-size:14px">Loading predictions...</p>
+    </div>
+    <div class="tab-content" id="tab-student-flags">
+      <div id="student-flags-list">
+        <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:24px;text-align:center;color:#6b7280">
+          <p style="font-size:15px;font-weight:600;margin-bottom:4px">No Student Flags Yet</p>
+          <small>When students flag career recommendations as concerns, they will appear here for review.</small>
+        </div>
+      </div>
     </div>
     <div class="tab-content" id="tab-analytics">
       <p style="color:#6b7280;font-size:14px">Loading analytics...</p>
@@ -575,6 +597,10 @@ async function submitProfile() {
   const name = document.getElementById('full-name').value.trim() || currentUser || 'Student';
   const grade = document.getElementById('grade').value;
   const subjects = [...document.querySelectorAll('.subject-chip.selected')].map(c => c.textContent.trim());
+  if (!document.getElementById('consent-platform').checked || !document.getElementById('consent-data').checked) {
+    alert('Please agree to both consent statements before continuing.');
+    return;
+  }
   if (subjects.length === 0) { alert('Please select at least one subject.'); return; }
   const field = detectField(subjects);
   const nqfMap = { 'Grade 8': 3, 'Grade 9': 3, 'Grade 10': 4, 'Grade 11': 4, 'Grade 12': 4 };
@@ -613,7 +639,7 @@ async function submitProfile() {
     if (result.careers) {
       result.careers.forEach(function(career, i) {
         const matchScore = Math.max(70, 95 - i * 5);
-        container.innerHTML += '<div class="career-card"><div class="career-card-header"><div><div class="career-title">' + career + '</div><div style="font-size:13px;color:#6b7280">' + field + '</div></div><div class="match-badge">' + matchScore + '% Match</div></div><p class="career-desc">This career aligns with your ' + field + ' background.' + (result.skills ? ' Key skills: ' + result.skills.slice(0,3).join(', ') + '.' : '') + '</p><div class="career-tags">' + subjects.slice(0,3).map(function(s){ return '<span class="tag">' + s + '</span>'; }).join('') + (result.skills ? result.skills.slice(0,2).map(function(s){ return '<span class="tag green">' + s + '</span>'; }).join('') : '') + '</div><div class="career-footer"><small>Recommended: ' + (result.universities ? result.universities.join(', ') : 'UKZN, UNIZULU, DUT') + '</small><button class="learn-btn" onclick="askAboutCareer(\'' + career + '\')">Learn More</button></div></div>';
+        container.innerHTML += '<div class="career-card"><div class="career-card-header"><div><div class="career-title">' + career + '</div><div style="font-size:13px;color:#6b7280">' + field + '</div></div><div class="match-badge">' + matchScore + '% Match</div></div><p class="career-desc">This career aligns with your ' + field + ' background.' + (result.skills ? ' Key skills: ' + result.skills.slice(0,3).join(', ') + '.' : '') + '</p><div class="career-tags">' + subjects.slice(0,3).map(function(s){ return '<span class="tag">' + s + '</span>'; }).join('') + (result.skills ? result.skills.slice(0,2).map(function(s){ return '<span class="tag green">' + s + '</span>'; }).join('') : '') + '</div><div class="career-footer" style="flex-wrap:wrap;gap:8px"><small>Recommended: ' + (result.universities ? result.universities.join(', ') : 'UKZN, UNIZULU, DUT') + '</small><div style="display:flex;gap:6px"><button class="learn-btn" onclick="askAboutCareer(\'' + career + '\')">Learn More</button></div></div>';
       });
     }
     showPage('results');
@@ -692,6 +718,60 @@ async function loadDashboard() {
     document.getElementById('tab-analytics').innerHTML = '<div class="analytics-grid"><div class="analytics-card"><h3>Field Distribution</h3>' + Object.entries(fields).map(function(e){ const pct=Math.round((e[1]/data.length)*100); return '<div class="bar-row"><span class="bar-label">'+e[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div><span class="bar-count">'+e[1]+'</span></div>'; }).join('') + '</div><div class="analytics-card"><h3>Bursary Availability</h3>' + ['Rich','Moderate','Limited'].map(function(p){ const c=data.filter(function(d){return d.prediction===p;}).length; const pct=data.length>0?Math.round((c/data.length)*100):0; return '<div class="bar-row"><span class="bar-label">'+p+'</span><div class="bar-track"><div class="bar-fill green" style="width:'+pct+'%"></div></div><span class="bar-count">'+c+'</span></div>'; }).join('') + '</div></div>';
     document.getElementById('tab-bias').innerHTML = '<div class="bias-card"><h3>Fairness and Bias Detection</h3><p class="bias-sub">Live monitoring of predictions for potential bias</p>' + Object.entries(fields).map(function(e){ const pct=Math.round((e[1]/data.length)*100); const flag=pct>60?'badge-yellow':'badge-green'; const label=pct>60?'Monitor':'Fair'; return '<div class="bias-row"><span>'+e[0]+'</span><span style="color:#6b7280;font-size:13px">'+e[1]+' predictions ('+pct+'%)</span><span class="bias-badge '+flag+'">'+label+'</span></div>'; }).join('') + '<div class="bias-row"><span>Limited Bursary Cases</span><span style="color:#6b7280;font-size:13px">'+limited+' students need support</span><span class="bias-badge '+(limited>5?'badge-yellow':'badge-green')+'">'+(limited>5?'Monitor':'Fair')+'</span></div></div>';
   } catch(e) { console.log('Dashboard error:', e); }
+}
+
+
+function studentFlag(career) {
+  const reason = prompt('Why are you flagging "' + career + '" as a concern?\n\nExamples:\n- This career does not match my interests\n- The recommendation seems biased\n- I need more information\n- Other');
+  if (!reason) return;
+  
+  // Save flag to flagged list
+  if (!window.studentFlags) window.studentFlags = [];
+  window.studentFlags.push({
+    career: career,
+    reason: reason,
+    time: new Date().toLocaleString(),
+    user: currentUser || 'Anonymous'
+  });
+  
+  alert('Thank you for your feedback! Your concern about "' + career + '" has been submitted for teacher review.\n\nA counsellor will review this recommendation.');
+  
+  // Update dashboard flags count if visible
+  updateFlagCount();
+}
+
+function updateFlagCount() {
+  const flags = window.studentFlags || [];
+  const countEl = document.getElementById('student-flags-count');
+  if (countEl) countEl.textContent = flags.length;
+  
+  const listEl = document.getElementById('student-flags-list');
+  if (!listEl || flags.length === 0) return;
+  
+  listEl.innerHTML = flags.map(function(f, i) {
+    return '<div style="background:white;border:1px solid #fca5a5;border-radius:12px;padding:20px;margin-bottom:12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">' +
+      '<div><div style="font-weight:700;font-size:15px">' + f.career + '</div>' +
+      '<div style="font-size:12px;color:#6b7280">Flagged by ' + f.user + ' at ' + f.time + '</div></div>' +
+      '<span style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">Pending Review</span>' +
+      '</div>' +
+      '<p style="font-size:14px;color:#374151;background:#f9fafb;padding:10px;border-radius:8px;margin-bottom:12px"><strong>Student concern:</strong> ' + f.reason + '</p>' +
+      '<div style="display:flex;gap:8px">' +
+      '<button onclick="resolveFlag(' + i + ','approved')" style="padding:6px 14px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Approve Career</button>' +
+      '<button onclick="resolveFlag(' + i + ','rejected')" style="padding:6px 14px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Remove Recommendation</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function resolveFlag(index, decision) {
+  const notes = prompt('Enter your review notes (required):');
+  if (!notes) return;
+  const flags = window.studentFlags || [];
+  const flag = flags[index];
+  alert('Flag resolved!\n\nCareer: ' + flag.career + '\nDecision: ' + decision.toUpperCase() + '\nNotes: ' + notes + '\n\nThis has been recorded in the system.');
+  flags.splice(index, 1);
+  window.studentFlags = flags;
+  updateFlagCount();
 }
 
 function flagPrediction(id, btn) {
