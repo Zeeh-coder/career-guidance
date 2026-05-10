@@ -267,6 +267,25 @@
       </div>
     </div>
     <div class="form-section">
+      <h2>Your Marks (%)</h2>
+      <p class="sec-desc">Enter your marks to get better bursary advice (optional but recommended)</p>
+      <div class="form-row">
+        <div>
+          <label>Average Marks (%)</label>
+          <input type="number" id="avg-marks" min="0" max="100" placeholder="e.g. 75">
+        </div>
+        <div>
+          <label>Mathematics Mark (%)</label>
+          <input type="number" id="maths-mark" min="0" max="100" placeholder="e.g. 80">
+        </div>
+        <div>
+          <label>Home Language Mark (%)</label>
+          <input type="number" id="language-mark" min="0" max="100" placeholder="e.g. 70">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
       <h2>Your Strengths (Optional)</h2>
       <p class="sec-desc">List skills or qualities you are good at (separated by commas)</p>
       <input type="text" placeholder="e.g., Leadership, Critical thinking, Communication" id="strengths">
@@ -565,13 +584,27 @@ async function submitProfile() {
   btn.textContent = 'Getting recommendations...';
   btn.disabled = true;
   try {
+    const avgMarks = parseInt(document.getElementById('avg-marks').value) || 70;
+    const mathsMark = parseInt(document.getElementById('maths-mark').value) || 0;
+
     const response = await fetch(API_URL + '/predict', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, nqf_level, duration: 3, skills_count: subjects.length, field, institution: 'Traditional University', marks: 70 })
+      body: JSON.stringify({ name, nqf_level, duration: 3, skills_count: subjects.length, field, institution: 'Traditional University', marks: avgMarks })
     });
     const result = await response.json();
     const bursaryLabel = result.prediction === 'Rich' ? 'High Bursary Availability' : result.prediction === 'Moderate' ? 'Moderate Bursary Availability' : 'Limited Bursary Availability';
-    const bursaryAdvice = result.prediction === 'Rich' ? 'You qualify for NSFAS, ISFAP, CSIR and Funza Lushaka.' : result.prediction === 'Moderate' ? 'You qualify for NSFAS and ISFAP.' : 'You may qualify for NSFAS. Focus on improving your marks.';
+    let bursaryAdvice = '';
+    if (avgMarks >= 75) {
+      bursaryAdvice = 'Excellent marks! You qualify for NSFAS, ISFAP, CSIR, Funza Lushaka and Anglo American.';
+    } else if (avgMarks >= 60) {
+      bursaryAdvice = 'Good marks! You qualify for NSFAS and ISFAP.';
+    } else if (avgMarks >= 50) {
+      bursaryAdvice = 'You qualify for NSFAS. Keep improving your marks to access more bursaries.';
+    } else if (avgMarks > 0) {
+      bursaryAdvice = 'Focus on improving your marks. You may qualify for NSFAS with a 50%+ average.';
+    } else {
+      bursaryAdvice = result.prediction === 'Rich' ? 'You qualify for NSFAS, ISFAP, CSIR and Funza Lushaka.' : result.prediction === 'Moderate' ? 'You qualify for NSFAS and ISFAP.' : 'You may qualify for NSFAS. Focus on improving your marks.';
+    }
     document.getElementById('results-greeting').textContent = 'Career Recommendations for ' + name;
     document.getElementById('results-sub').textContent = 'Based on your ' + subjects.length + ' subjects in ' + field + ', here are your top career matches with ' + result.confidence + ' confidence.';
     const container = document.getElementById('results-cards');
