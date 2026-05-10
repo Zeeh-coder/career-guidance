@@ -688,11 +688,35 @@ async function loadDashboard() {
     data.forEach(function(d){ if(d.field) fields[d.field] = (fields[d.field]||0)+1; });
     const flagged = Object.values(fields).filter(function(c){ return (c/data.length)*100 > 60; }).length;
     document.getElementById('stat-bias').textContent = flagged;
-    document.getElementById('tab-flagged').innerHTML = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)"><thead><tr style="background:#1a1a2e;color:white"><th style="padding:12px;text-align:left">#</th><th style="padding:12px;text-align:left">Field</th><th style="padding:12px;text-align:left">Institution</th><th style="padding:12px;text-align:left">NQF</th><th style="padding:12px;text-align:left">Prediction</th><th style="padding:12px;text-align:left">Confidence</th><th style="padding:12px;text-align:left">Date</th></tr></thead><tbody>' + data.map(function(row,i){ const bc = row.prediction==='Rich'?'background:#dcfce7;color:#16a34a':row.prediction==='Moderate'?'background:#fef9c3;color:#ca8a04':'background:#fee2e2;color:#dc2626'; const date=(row.timestamp||'').split(' ')[0]; return '<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:12px">'+(i+1)+'</td><td style="padding:12px">'+(row.field||'')+'</td><td style="padding:12px">'+(row.institution||'')+'</td><td style="padding:12px">'+(row.nqf_level||'')+'</td><td style="padding:12px"><span style="padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;'+bc+'">'+(row.prediction||'')+'</span></td><td style="padding:12px">'+(row.confidence||'')+'</td><td style="padding:12px">'+date+'</td></tr>'; }).join('') + '</tbody></table></div>';
+    document.getElementById('tab-flagged').innerHTML = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)"><thead><tr style="background:#1a1a2e;color:white"><th style="padding:12px;text-align:left">#</th><th style="padding:12px;text-align:left">Field</th><th style="padding:12px;text-align:left">Institution</th><th style="padding:12px;text-align:left">NQF</th><th style="padding:12px;text-align:left">Prediction</th><th style="padding:12px;text-align:left">Confidence</th><th style="padding:12px;text-align:left">Date</th></tr></thead><tbody>' + data.map(function(row,i){ const bc = row.prediction==='Rich'?'background:#dcfce7;color:#16a34a':row.prediction==='Moderate'?'background:#fef9c3;color:#ca8a04':'background:#fee2e2;color:#dc2626'; const date=(row.timestamp||'').split(' ')[0]; return '<tr style="border-bottom:1px solid #f3f4f6"><td style="padding:12px">'+(i+1)+'</td><td style="padding:12px">'+(row.field||'')+'</td><td style="padding:12px">'+(row.institution||'')+'</td><td style="padding:12px">'+(row.nqf_level||'')+'</td><td style="padding:12px"><span style="padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;'+bc+'">'+(row.prediction||'')+'</span></td><td style="padding:12px">'+(row.confidence||'')+'</td><td style="padding:12px">'+date+'</td><td style="padding:12px"><button onclick="flagPrediction('+(row.id||i)+',this)" style="padding:4px 8px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font-size:11px;cursor:pointer;margin-right:4px">Flag</button><button onclick="approvePrediction('+(row.id||i)+',this)" style="padding:4px 8px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:6px;font-size:11px;cursor:pointer">Approve</button></td></tr>'; }).join('') + '</tbody></table></div>';
     document.getElementById('tab-analytics').innerHTML = '<div class="analytics-grid"><div class="analytics-card"><h3>Field Distribution</h3>' + Object.entries(fields).map(function(e){ const pct=Math.round((e[1]/data.length)*100); return '<div class="bar-row"><span class="bar-label">'+e[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div><span class="bar-count">'+e[1]+'</span></div>'; }).join('') + '</div><div class="analytics-card"><h3>Bursary Availability</h3>' + ['Rich','Moderate','Limited'].map(function(p){ const c=data.filter(function(d){return d.prediction===p;}).length; const pct=data.length>0?Math.round((c/data.length)*100):0; return '<div class="bar-row"><span class="bar-label">'+p+'</span><div class="bar-track"><div class="bar-fill green" style="width:'+pct+'%"></div></div><span class="bar-count">'+c+'</span></div>'; }).join('') + '</div></div>';
     document.getElementById('tab-bias').innerHTML = '<div class="bias-card"><h3>Fairness and Bias Detection</h3><p class="bias-sub">Live monitoring of predictions for potential bias</p>' + Object.entries(fields).map(function(e){ const pct=Math.round((e[1]/data.length)*100); const flag=pct>60?'badge-yellow':'badge-green'; const label=pct>60?'Monitor':'Fair'; return '<div class="bias-row"><span>'+e[0]+'</span><span style="color:#6b7280;font-size:13px">'+e[1]+' predictions ('+pct+'%)</span><span class="bias-badge '+flag+'">'+label+'</span></div>'; }).join('') + '<div class="bias-row"><span>Limited Bursary Cases</span><span style="color:#6b7280;font-size:13px">'+limited+' students need support</span><span class="bias-badge '+(limited>5?'badge-yellow':'badge-green')+'">'+(limited>5?'Monitor':'Fair')+'</span></div></div>';
   } catch(e) { console.log('Dashboard error:', e); }
 }
+
+function flagPrediction(id, btn) {
+  const comment = prompt('Enter your concern about this prediction (required):');
+  if (!comment) return;
+  btn.textContent = 'Flagged';
+  btn.style.background = '#dc2626';
+  btn.style.color = 'white';
+  btn.disabled = true;
+  const next = btn.nextElementSibling;
+  if (next) next.disabled = true;
+  alert('Prediction #' + id + ' has been flagged.\nComment: "' + comment + '"\nThis will be reviewed by the system administrator.');
+}
+
+function approvePrediction(id, btn) {
+  if (!confirm('Are you sure you want to approve prediction #' + id + '?')) return;
+  btn.textContent = 'Approved';
+  btn.style.background = '#16a34a';
+  btn.style.color = 'white';
+  btn.disabled = true;
+  const prev = btn.previousElementSibling;
+  if (prev) prev.disabled = true;
+  alert('Prediction #' + id + ' has been approved by the counsellor.');
+}
+
 </script>
 </body>
 </html>
