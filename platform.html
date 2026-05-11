@@ -763,12 +763,13 @@ function updateFlagCount() {
   }).join('');
 }
 
-function resolveFlag(index, decision) {
+function resolveFlag(index, approved) {
   const notes = prompt('Enter your review notes (required):');
   if (!notes) return;
   const flags = window.studentFlags || [];
   const flag = flags[index];
-  alert('Flag resolved!\n\nCareer: ' + flag.career + '\nDecision: ' + decision.toUpperCase() + '\nNotes: ' + notes + '\n\nThis has been recorded in the system.');
+  const decision = approved ? 'APPROVED' : 'REMOVED';
+  alert('Flag resolved!\n\nCareer: ' + flag.career + '\nDecision: ' + decision + '\nNotes: ' + notes + '\n\nThis has been recorded in the system.');
   flags.splice(index, 1);
   window.studentFlags = flags;
   updateFlagCount();
